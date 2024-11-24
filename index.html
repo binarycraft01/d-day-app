@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>D-DAY 앱</title>
+    <style>
+        body {
+            font-family: '맑은 고딕', sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .dday-input {
+            margin-bottom: 20px;
+        }
+        .dday-list {
+            margin-top: 20px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>D-DAY 계산기</h1>
+        <div class="dday-input">
+            <input type="text" id="eventName" placeholder="이벤트 이름">
+            <input type="date" id="eventDate">
+            <button onclick="addDday()">추가하기</button>
+        </div>
+        <div class="dday-list" id="ddayList">
+            <!-- D-day 목록이 여기에 표시됩니다 -->
+        </div>
+    </div>
+    <script src="renderer.js" defer></script>
+</body>
+</html>
