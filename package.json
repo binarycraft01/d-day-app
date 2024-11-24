@@ -16,8 +16,8 @@
     "appId": "com.dday.app",
     "asar": true,
     "win": {
-        "target": ["nsis"],
-        "icon": "./resources/installer/Icon.ico"
+      "target": ["nsis"],
+      "icon": "./resources/d-day-app-icon.ico"
     },
     "nsis": {
         "oneClick": false,
@@ -27,7 +27,8 @@
         "runAfterFinish": true
     },
     "directories": {
-        "output": "./dist/"
+      "buildResources": "resources",
+      "output": "dist"
     }
   },
   "devDependencies": {
