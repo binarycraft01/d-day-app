@@ -42,16 +42,54 @@ function updateDdayList() {
     const ddayListElement = document.getElementById('ddayList');
     ddayListElement.innerHTML = '';
 
-    ddayList.forEach(dday => {
+    ddayList.forEach((dday, index) => {
         const days = calculateDday(dday.date);
         const ddayElement = document.createElement('div');
         ddayElement.className = 'dday-item';
+        ddayElement.draggable = true;
+        ddayElement.dataset.index = index;
         ddayElement.innerHTML = `
             <span>${dday.name}: ${days}</span>
-            <button onclick="deleteDday(${dday.id})">삭제</button>
+            <div class="button-container">
+                <button onclick="deleteDday(${dday.id})">삭제</button>
+                <div class="drag-handle">☰</div>
+            </div>
         `;
+
+        ddayElement.addEventListener('dragstart', handleDragStart);
+        ddayElement.addEventListener('dragend', handleDragEnd);
+        ddayElement.addEventListener('dragover', handleDragOver);
+        ddayElement.addEventListener('drop', handleDrop);
+
         ddayListElement.appendChild(ddayElement);
     });
+}
+
+// 드래그 이벤트 핸들러 함수들 추가
+function handleDragStart(e) {
+    this.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', this.dataset.index);
+}
+
+function handleDragEnd(e) {
+    this.classList.remove('dragging');
+}
+
+function handleDragOver(e) {
+    e.preventDefault();
+}
+
+function handleDrop(e) {
+    e.preventDefault();
+    const draggedIndex = parseInt(e.dataTransfer.getData('text/plain'));
+    const dropIndex = Array.from(this.parentNode.children).indexOf(this);
+    
+    const temp = ddayList[draggedIndex];
+    ddayList.splice(draggedIndex, 1);
+    ddayList.splice(dropIndex, 0, temp);
+    
+    saveToLocalStorage();
+    updateDdayList();
 }
 
 // D-day 계산 함수
