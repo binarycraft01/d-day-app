@@ -1,12 +1,13 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron')
-const path = require('path')
+const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
+const path = require('path');
 
-// Windows 시작시 프로그램 자동 실행 설정 추가
+// Windows 시작 시 프로그램 자동 실행 설정 추가
 if (process.platform === 'win32') {
+    const execPath = path.join(__dirname, 'dist/YourApp.exe'); // 빌드된 실행 파일의 경로 확인 필요
     app.setLoginItemSettings({
         openAtLogin: true,
-        path: process.execPath,
-        args: ['--no-sandbox'] //필요 시 플래그 추가하기
+        path: execPath,
+        args: ['--no-sandbox'] // 필요 시 추가 플래그 사용
     });
 }
 
@@ -21,11 +22,11 @@ function createWindow() {
             nodeIntegration: false,
             contextIsolation: true,
             preload: path.join(__dirname, 'preload.js'),
-            devTools: isDevelopment // 개발 모드인지 확인 후 개발모드에서만 DevTools 활설화하기
+            devTools: isDevelopment // 개발 모드에서만 DevTools 활성화
         },
         resizable: false,
-        autoHideMenuBar: false
-    })
+        autoHideMenuBar: true // 메뉴바 자동 숨김 설정
+    });
 
     // 강제로 DevTools가 열리지 않도록 차단
     win.webContents.on('devtools-opened', () => {
@@ -34,7 +35,6 @@ function createWindow() {
 
     win.loadFile('index.html');
     return win;
-
 }
 
 // 메인 프로세스에서 다이얼로그 이벤트 처리
@@ -47,15 +47,16 @@ ipcMain.handle('show-dialog', async () => {
     return result;
 });
 
+// 앱 초기화
 app.whenReady().then(() => {
-    createWindow()
+    createWindow();
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
-            createWindow()
+            createWindow();
         }
-    })
-})
+    });
+});
 
 // 모든 창이 닫히면 앱 종료
 app.on('window-all-closed', () => {
