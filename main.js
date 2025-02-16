@@ -1,15 +1,6 @@
 const { app, BrowserWindow, Menu, ipcMain, dialog } = require('electron');
 const path = require('path');
-
-// Windows 시작 시 프로그램 자동 실행 설정 추가
-if (process.platform === 'win32') {
-    const execPath = path.join(__dirname, 'dist/YourApp.exe'); // 빌드된 실행 파일의 경로 확인 필요
-    app.setLoginItemSettings({
-        openAtLogin: true,
-        path: execPath,
-        args: ['--no-sandbox'] // 필요 시 추가 플래그 사용
-    });
-}
+const settings = require('electron-settings');
 
 // 실행 모드 확인 (development 또는 production)
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -37,6 +28,38 @@ function createWindow() {
     return win;
 }
 
+// 자동 실행 설정 함수
+function setAutoLaunch(enable) {
+    app.setLoginItemSettings({
+        openAtLogin: enable,
+        path: app.getPath('exe'),
+        args: ['--no-sandbox']
+    });
+
+    settings.set('autoLaunch', enable);
+}
+
+// 앱 초기화
+app.whenReady().then(() => {
+    createWindow();
+
+    // 저장된 설정을 불러와 자동 실행 적용
+    const autoLaunch = settings.get('autoLaunch', true);
+    setAutoLaunch(autoLaunch);
+
+    app.on('activate', () => {
+        if (BrowserWindow.getAllWindows().length === 0) {
+            createWindow();
+        }
+    });
+});
+
+// 자동 실행 설정 변경 이벤트
+ipcMain.on('set-auto-launch', (event, enable) => {
+    setAutoLaunch(enable);
+});
+
+
 // 메인 프로세스에서 다이얼로그 이벤트 처리
 ipcMain.handle('show-dialog', async () => {
     const result = await dialog.showMessageBox({
@@ -47,18 +70,7 @@ ipcMain.handle('show-dialog', async () => {
     return result;
 });
 
-// 앱 초기화
-app.whenReady().then(() => {
-    createWindow();
-
-    app.on('activate', () => {
-        if (BrowserWindow.getAllWindows().length === 0) {
-            createWindow();
-        }
-    });
-});
-
-// 모든 창이 닫히면 앱 종료
+// 창닫히면 앱 종료
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {
         app.quit();
