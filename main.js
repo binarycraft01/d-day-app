@@ -70,6 +70,10 @@ ipcMain.handle('show-dialog', async () => {
     return result;
 });
 
+ipcMain.handle('get-auto-launch', async () => {
+    return settings.get('autoLaunch', true); // 저장된 값이 없으면 기본값 true
+});
+
 // 창닫히면 앱 종료
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') {

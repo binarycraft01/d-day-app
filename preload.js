@@ -1,6 +1,6 @@
-const { contextBridge, ipcRenderer } = require('electron')
+const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
-    showDialog: () => ipcRenderer.invoke('show-dialog'),
-    onShowInfo: (callback) => ipcRenderer.on('show-info', callback)
-})
+    setAutoLaunch: (enable) => ipcRenderer.send('set-auto-launch', enable),
+    showDialog: () => ipcRenderer.invoke('show-dialog')
+});

@@ -147,7 +147,22 @@ function loadFromLocalStorage() {
 
 
 // 페이지 로드 시 저장된 D-day 불러오기
-window.onload = loadFromLocalStorage;
+window.onload = () => {
+    loadFromLocalStorage();
+
+    // 자동 실행 토글 이벤트 리스너 추가
+    const autoLaunchToggle = document.getElementById('autoLaunchToggle');
+    if (autoLaunchToggle) {
+        window.electronAPI.getAutoLaunch().then((isEnabled) => {
+            autoLaunchToggle.checked = isEnabled; // 현재 설정 상태 반영
+        });
+
+        autoLaunchToggle.addEventListener('change', async (event) => {
+            const enable = event.target.checked;
+            await window.electronAPI.setAutoLaunch(enable);
+        });
+    }
+};
 
 // 정보 표시 이벤트 리스너
 window.electronAPI.onShowInfo((event, info) => {

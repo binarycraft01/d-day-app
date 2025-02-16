@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <title>D-DAY 앱</title>
@@ -33,15 +33,12 @@
             padding: 10px;
             border-bottom: 1px solid #eee;
         }
-
         .dday-item span {
-            flex: 1;  /* 텍스트가 최대한의 공간을 차지하도록 */
+            flex: 1;
         }
-
         .dday-item button {
-            margin-left: auto;  /* 버튼을 오른쪽으로 밀어냄 */
+            margin-left: auto;
         }
-        
         input[type="text"], input[type="date"] {
             padding: 8px;
             border: 1px solid #ddd;
@@ -51,14 +48,13 @@
         button {
             background-color: #4CAF50;
             color: white;
-            padding: 5px 10px;  /* 버튼 크기 축소 */
+            padding: 5px 10px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             white-space: nowrap;
-            font-size: 0.9em;  /* 글자 크기 축소 */
-            order: 1;  /* 삭제 버튼을 햄버거 앞으로 */
-            margin-right: 5px;  /* 햄버거 아이콘과의 간격 */
+            font-size: 0.9em;
+            order: 1;
         }
         button:hover {
             background-color: #45a049;
@@ -67,7 +63,6 @@
             text-align: center;
             margin-bottom: 30px;
         }
-
         .drag-handle {
             cursor: move;
             padding: 0 5px;
@@ -78,16 +73,11 @@
             opacity: 0.5;
             background-color: #f5f5f5;
         }
-
         .button-container {
             margin-left: auto;
             display: flex;
             align-items: center;
             gap: 8px;
-        }
-
-        .dday-item span {
-            flex: 1;
         }
     </style>
 </head>
@@ -103,6 +93,15 @@
             <!-- D-day 목록이 여기에 표시됩니다 -->
         </div>
     </div>
+
+    <!-- ✅ script 태그를 footer 위로 이동 -->
     <script src="renderer.js" defer></script>
+
+    <footer>
+        <label>
+            <input type="checkbox" id="autoLaunchToggle">
+            Windows 시작 시 자동 실행
+        </label>
+    </footer>
 </body>
 </html>
