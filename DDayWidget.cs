@@ -410,8 +410,54 @@ static class Program {
 
 // ── 앱 정보 ──────────────────────────────────────────────────
 static class AppInfo {
-    public const string VERSION_TEXT = "D-day widget v6.2(20261027)";
-    public const string CREDIT_TEXT  = "Developed by 김민수 with Claude";
+    public const string NAME         = "D-Day Widget";
+    public const string VERSION      = "v6.3";
+    public const string RELEASE_DATE = "2026.10.27";
+    public const string CREDIT_TEXT  = "© 2026 김민수 · Built with Claude";
+    public const string REPO_URL     = "https://github.com/binarycraft01/d-day-app";
+    public const string REPO_LABEL   = "github.com/binarycraft01/d-day-app";
+}
+
+// ── 버전 기록 (설정 창과 CHANGELOG.md가 함께 쓰는 단일 원본) ──
+// 새 버전은 맨 위에 추가
+class ChangeEntry {
+    public string   Version, Date;
+    public string[] Items;
+    public ChangeEntry(string v, string d, params string[] items) { Version=v; Date=d; Items=items; }
+}
+
+static class Changelog {
+    public const string OLDER_NOTE = "v5.7 이전 기록은 생략";
+
+    public static readonly ChangeEntry[] Entries = new ChangeEntry[] {
+        new ChangeEntry("v6.3", "2026.10.27",
+            "설정 창에 버전 정보·기록 추가",
+            "하단 표기를 '© 2026 김민수 · Built with Claude'로 변경"),
+        new ChangeEntry("v6.2", "2026.10.27",
+            "위젯 안에서 일정 추가·수정·삭제하는 편집 창",
+            "일정별 개별 색상 지정",
+            "우하단 모서리 드래그로 크기 조절 (70~200%)",
+            "보조 모니터 위치 기억, 모니터 분리 시 화면 안으로 자동 복귀",
+            "라이트 모드 포인트색을 명도대비 기준으로 자동 보정",
+            "드래그 핸들러 누적, 라이트 모드 임박 강조 등 버그 수정"),
+        new ChangeEntry("v6.1", "2026.07.06",
+            "라이트 / 다크 모드 추가",
+            "라이트 모드에서 포인트색 자동 보정"),
+        new ChangeEntry("v6.0", "2026.07.06",
+            "설정 창 닫기(×) 버튼이 동작하지 않던 문제 수정",
+            "타이틀에 테마 색상 적용"),
+        new ChangeEntry("v5.9", "2026.07.06",
+            "모던 리디자인: 뉴트럴 배경, 테마색은 포인트로만 사용",
+            "구분선 제거, 여백 확대",
+            "긴급도별 표시: 당일 강조, D-7 이내 강조, 지난 일정 회색",
+            "헤더 버튼 hover 효과"),
+        new ChangeEntry("v5.8", "2026.07.06",
+            "일정 이름 아래 날짜 표시",
+            "하단 시계에 시·분 표시, 자정에 D-Day 자동 갱신",
+            "화면 갱신 시 리소스가 누수되던 문제 수정"),
+        new ChangeEntry("v5.7", "2026.05.29",
+            "기록 시작 버전: 테마 7색, 투명도, 자동 시작, 항상 위, 날짜순 정렬"),
+    };
 }
 
 // ── 공용 Win32 ───────────────────────────────────────────────
@@ -1249,10 +1295,10 @@ class SettingsForm : Form {
     ToggleSwitch sortToggle;
     ToggleSwitch lightToggle;
 
-    Font   sfTitle, sfSection, sfNormal, sfClose, sfSmall;
+    Font   sfTitle, sfSection, sfNormal, sfClose, sfSmall, sfAppName, sfLogHead, sfLog;
     Font[] sfThemeFonts;
 
-    const int FW = 360, FH = 410;
+    const int FW = 360;   // 높이는 BuildUI에서 내용에 맞춰 결정
 
     public SettingsForm(DDayForm parent, string curTheme, int curOpacity,
                         bool curTopMost, bool curSort, bool curLight, string exePath) {
@@ -1267,14 +1313,12 @@ class SettingsForm : Form {
         FormBorderStyle = FormBorderStyle.None;
         StartPosition   = FormStartPosition.CenterScreen;
         Text            = "D-Day 설정";
-        ClientSize      = new Size(FW, FH);
         TopMost         = true;
         Opacity         = 1.0;
 
         // 폼 본체 드래그는 한 번만 등록 (BuildUI 재호출 시 누적되던 문제 수정)
         MouseDown += DragMouseDown;
 
-        ApplyRoundCorner();
         BuildUI();
     }
 
@@ -1288,6 +1332,9 @@ class SettingsForm : Form {
         if (sfNormal  != null) { sfNormal.Dispose();  sfNormal  = null; }
         if (sfClose   != null) { sfClose.Dispose();   sfClose   = null; }
         if (sfSmall   != null) { sfSmall.Dispose();   sfSmall   = null; }
+        if (sfAppName != null) { sfAppName.Dispose(); sfAppName = null; }
+        if (sfLogHead != null) { sfLogHead.Dispose(); sfLogHead = null; }
+        if (sfLog     != null) { sfLog.Dispose();     sfLog     = null; }
         if (sfThemeFonts != null) {
             foreach (var f in sfThemeFonts) if (f != null) f.Dispose();
             sfThemeFonts = null;
@@ -1301,7 +1348,7 @@ class SettingsForm : Form {
 
     void ApplyRoundCorner() {
         var oldRgn = Region;
-        using (var gp = Ui.Rounded(new Rectangle(0, 0, FW, FH), 18))
+        using (var gp = Ui.Rounded(new Rectangle(0, 0, Width, Height), 18))
             Region = new Region(gp);
         if (oldRgn != null) oldRgn.Dispose();
     }
@@ -1341,6 +1388,9 @@ class SettingsForm : Form {
         sfNormal     = new Font("Malgun Gothic", 10);
         sfClose      = new Font("Arial", 15, FontStyle.Bold);
         sfSmall      = new Font("Malgun Gothic", 8, FontStyle.Bold);
+        sfAppName    = new Font("Malgun Gothic", 10, FontStyle.Bold);
+        sfLogHead    = new Font("Malgun Gothic", 9, FontStyle.Bold);
+        sfLog        = new Font("Malgun Gothic", 9);
         sfThemeFonts = new Font[Themes.All.Length];
         for (int i = 0; i < Themes.All.Length; i++)
             sfThemeFonts[i] = new Font("Malgun Gothic", 8, FontStyle.Bold);
@@ -1505,6 +1555,61 @@ class SettingsForm : Form {
         Controls.Add(new Panel { BackColor=sDi, Location=new Point(PX,cy), Size=new Size(FW-PX*2,1) });
         cy += 14;
 
+        // ── 버전 정보 ──────────────────────────────────────
+        Controls.Add(new Label {
+            Text="버전 정보", Font=sfSection, ForeColor=sAc, BackColor=sBg,
+            Location=new Point(PX, cy), Size=new Size(200, 24)
+        });
+        cy += 30;
+
+        Controls.Add(new Label {
+            Text=AppInfo.NAME + "  " + AppInfo.VERSION + " (" + AppInfo.RELEASE_DATE + ")",
+            Font=sfAppName, ForeColor=Themes.Get(selTheme, selLight).cTx, BackColor=sBg,
+            Location=new Point(PX, cy), Size=new Size(FW - PX*2, 22),
+            TextAlign=ContentAlignment.MiddleLeft
+        });
+        cy += 22;
+
+        Controls.Add(new Label {
+            Text=AppInfo.CREDIT_TEXT, Font=sfLog, ForeColor=sSub, BackColor=sBg,
+            Location=new Point(PX, cy), Size=new Size(FW - PX*2, 20),
+            TextAlign=ContentAlignment.MiddleLeft
+        });
+        cy += 20;
+
+        var repoLink = new LinkLabel {
+            Text=AppInfo.REPO_LABEL, Font=sfLog, BackColor=sBg,
+            LinkColor=sAc, ActiveLinkColor=sAc, VisitedLinkColor=sAc,
+            LinkBehavior=LinkBehavior.HoverUnderline,
+            Location=new Point(PX, cy), Size=new Size(FW - PX*2, 20),
+            TextAlign=ContentAlignment.MiddleLeft
+        };
+        repoLink.LinkClicked += delegate(object s, LinkLabelLinkClickedEventArgs e) {
+            try { System.Diagnostics.Process.Start(AppInfo.REPO_URL); } catch {}
+        };
+        Controls.Add(repoLink);
+        cy += 28;
+
+        // 버전 기록 (스크롤)
+        Color logBg = selLight ? Color.White : Ui.Blend(sBg, Color.White, 0.05f);
+        var logBox = new Panel {
+            BackColor=logBg, Location=new Point(PX, cy), Size=new Size(FW - PX*2, 130),
+            Padding=new Padding(10, 8, 4, 8)
+        };
+        var log = new RichTextBox {
+            ReadOnly=true, BorderStyle=BorderStyle.None, DetectUrls=false,
+            ScrollBars=RichTextBoxScrollBars.Vertical, TabStop=false,
+            Dock=DockStyle.Fill, Cursor=Cursors.Default
+        };
+        log.BackColor = logBg;   // ReadOnly 설정 시 회색으로 바뀌므로 그 뒤에 지정
+        FillChangelog(log, sAc, Themes.Get(selTheme, selLight).cTx, sSub, logBg);
+        logBox.Controls.Add(log);
+        Controls.Add(logBox);
+        cy += 130 + 16;
+
+        Controls.Add(new Panel { BackColor=sDi, Location=new Point(PX,cy), Size=new Size(FW-PX*2,1) });
+        cy += 14;
+
         // 적용 버튼
         var applyBtn = new Button {
             Text="적용", Font=sfNormal,
@@ -1520,21 +1625,38 @@ class SettingsForm : Form {
             Close();
         };
         Controls.Add(applyBtn);
+        cy += 34 + 18;
 
-        // 버전 표기
-        Controls.Add(new Label {
-            Text=AppInfo.VERSION_TEXT, Font=sfSmall,
-            ForeColor=Ui.Blend(sSub, sBg, 0.4f), BackColor=sBg,
-            Location=new Point(PX, cy+8), Size=new Size(FW - PX*2 - 100, 18),
-            TextAlign=ContentAlignment.MiddleLeft
-        });
+        ClientSize = new Size(FW, cy);
+        ApplyRoundCorner();
 
         // 하위 컨트롤 드래그 (조작 컨트롤 제외)
         foreach (Control c in Controls) {
-            if (!(c is Button) && !(c is TrackBar) && !(c is ToggleSwitch) && !(c is IconButton))
+            if (!(c is Button) && !(c is TrackBar) && !(c is ToggleSwitch) && !(c is IconButton)
+                && !(c is LinkLabel) && !(c is Panel && c.Controls.Count > 0))
                 c.MouseDown += DragMouseDown;
         }
         ResumeLayout(false);
+    }
+
+    void FillChangelog(RichTextBox rtb, Color head, Color text, Color sub, Color bg) {
+        foreach (var en in Changelog.Entries) {
+            rtb.SelectionFont  = sfLogHead;
+            rtb.SelectionColor = head;
+            rtb.AppendText(en.Version + "   ");
+            rtb.SelectionFont  = sfLog;
+            rtb.SelectionColor = sub;
+            rtb.AppendText(en.Date + "\n");
+            rtb.SelectionColor = text;
+            foreach (var it in en.Items) rtb.AppendText("· " + it + "\n");
+            rtb.AppendText("\n");
+        }
+        rtb.SelectionFont  = sfLog;
+        rtb.SelectionColor = Ui.Blend(sub, bg, 0.3f);
+        rtb.AppendText(Changelog.OLDER_NOTE);
+        rtb.SelectionStart  = 0;
+        rtb.SelectionLength = 0;
+        rtb.ScrollToCaret();
     }
 
     void SelectTheme(string key) {
