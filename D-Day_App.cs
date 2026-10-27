@@ -190,9 +190,12 @@ static class EventStore {
             sb.Append("\r\n");
         }
         string tmp = path + ".tmp";
-        File.WriteAllText(tmp, sb.ToString(), new UTF8Encoding(true));
-        File.Copy(tmp, path, true);
-        File.Delete(tmp);
+        try {
+            File.WriteAllText(tmp, sb.ToString(), new UTF8Encoding(true));
+            File.Copy(tmp, path, true);
+        } finally {
+            try { if (File.Exists(tmp)) File.Delete(tmp); } catch {}
+        }
     }
 }
 
@@ -431,7 +434,7 @@ static class Program {
 // ── 앱 정보 ──────────────────────────────────────────────────
 static class AppInfo {
     public const string NAME         = "D-Day App";
-    public const string VERSION      = "v6.4";
+    public const string VERSION      = "v6.5";
     public const string RELEASE_DATE = "2026.10.27";
     public const string PURPOSE      = "PC 바탕화면에 중요한 디데이를 표시하는 앱";
     public const string COPYRIGHT    = "© 2026 김민수";
@@ -629,6 +632,13 @@ class DDayForm : Form {
     }
 
     public void RefreshApp() { Build(); }
+
+    // 버튼·메뉴 클릭 처리 도중 Build()가 그 컨트롤 자신을 해제하지 않도록,
+    // 클릭 처리가 끝난 뒤로 재구성을 미룬다
+    void BuildLater() {
+        if (IsHandleCreated && !IsDisposed) BeginInvoke((MethodInvoker)Build);
+        else Build();
+    }
 
     static float ClampScale(float s) {
         if (s < SCALE_MIN) return SCALE_MIN;
@@ -828,7 +838,7 @@ class DDayForm : Form {
     Label MkLbl(string txt, int x, int y, int w, int h, Font f, Color fc, ContentAlignment a) {
         return new Label {
             Text=txt, Font=f, ForeColor=fc, BackColor=theme.cBg,
-            Location=new Point(x,y), Size=new Size(w,h), TextAlign=a
+            Location=new Point(x,y), Size=new Size(w,h), TextAlign=a, AutoEllipsis=true
         };
     }
 
@@ -873,8 +883,9 @@ class DDayForm : Form {
             TextRenderer.MeasureText("D-999", fD).Width,
             TextRenderer.MeasureText("D-DAY", fD).Width + S(22)) + S(10);
         int maxNameW = events.Count == 0 ? TextRenderer.MeasureText(EMPTY_MSG, fN).Width : 0;
+        int nameCap = S(420);   // 이름 폭 상한: 넘으면 '…'로 줄임
         foreach (var ev in events) {
-            int w = TextRenderer.MeasureText(ev.Name, fN).Width;
+            int w = Math.Min(TextRenderer.MeasureText(ev.Name, fN).Width, nameCap);
             if (w > maxNameW) maxNameW = w;
             int dw = TextRenderer.MeasureText(EventDateStr(ev.Date), fS).Width;
             if (dw > maxNameW) maxNameW = dw;
@@ -906,7 +917,7 @@ class DDayForm : Form {
         int bx = PX + CW - btnSz * 4 - btnGap * 3;
 
         var refreshBtn = MkIconBtn("↺", fBtn, bx, cy, btnSz, theme.cTx);
-        refreshBtn.Click += delegate(object s, EventArgs e) { Build(); };
+        refreshBtn.Click += delegate(object s, EventArgs e) { BuildLater(); };
         Controls.Add(refreshBtn);
         bx += btnSz + btnGap;
 
@@ -992,14 +1003,16 @@ class DDayForm : Form {
 
         // ── 우클릭 메뉴 ────────────────────────────────────
         var ctx = new ContextMenuStrip();
-        ctx.Items.Add("새로고침").Click            += delegate(object s, EventArgs e) { Build(); };
+        ctx.Items.Add("새로고침").Click            += delegate(object s, EventArgs e) { BuildLater(); };
         ctx.Items.Add("이벤트 편집").Click         += delegate(object s, EventArgs e) { OpenEditor(); };
         ctx.Items.Add("events.txt 직접 열기").Click += delegate(object s, EventArgs e) { OpenEventsFile(); };
         ctx.Items.Add("설정").Click                += delegate(object s, EventArgs e) { OpenSettings(); };
         ctx.Items.Add(new ToolStripSeparator());
         var sizeItem = new ToolStripMenuItem("크기 " + (int)Math.Round(scale * 100) + "% → 100%로 초기화");
         sizeItem.Enabled = Math.Abs(scale - 1f) > 0.001f;
-        sizeItem.Click  += delegate(object s, EventArgs e) { SetScale(1f); };
+        sizeItem.Click  += delegate(object s, EventArgs e) {
+            BeginInvoke((MethodInvoker)delegate { SetScale(1f); });
+        };
         ctx.Items.Add(sizeItem);
         ctx.Items.Add(new ToolStripSeparator());
         ctx.Items.Add("종료").Click += delegate(object s, EventArgs e) { SavePos(); Close(); };
@@ -1197,7 +1210,10 @@ class EventEditorForm : Form {
             Size=new Size(28, 28), Location=new Point(372, 4)
         };
         tip.SetToolTip(del, "삭제");
-        del.Click += delegate(object s, EventArgs e) { RemoveRow(r); };
+        // 삭제 버튼이 자기 클릭 처리 도중 해제되지 않도록 처리 후로 미룸
+        del.Click += delegate(object s, EventArgs e) {
+            BeginInvoke((MethodInvoker)delegate { RemoveRow(r); });
+        };
 
         r.Panel.Controls.Add(r.Name);
         r.Panel.Controls.Add(r.Date);
@@ -1214,6 +1230,7 @@ class EventEditorForm : Form {
     }
 
     void RemoveRow(Row r) {
+        if (!rows.Contains(r)) return;
         rows.Remove(r);
         list.Controls.Remove(r.Panel);
         r.Panel.Dispose();   // 자식(TextBox·DTP·Dot·버튼)까지 함께 해제
@@ -1306,6 +1323,12 @@ class SettingsForm : Form {
 
     void DragMouseDown(object s, MouseEventArgs e) {
         if (e.Button == MouseButtons.Left) Native.BeginMove(this);
+    }
+
+    // 클릭한 버튼·토글이 자기 클릭 처리 도중 해제되지 않도록 재구성을 미룸
+    void BuildUILater() {
+        if (IsHandleCreated && !IsDisposed) BeginInvoke((MethodInvoker)BuildUI);
+        else BuildUI();
     }
 
     void DisposeUIFonts() {
@@ -1436,7 +1459,7 @@ class SettingsForm : Form {
             btn.FlatAppearance.MouseOverBackColor = th.Sample;
             btn.FlatAppearance.MouseDownBackColor = th.Sample;
             string key = th.Key;
-            btn.Click += delegate(object s, EventArgs e) { selTheme = key; BuildUI(); };
+            btn.Click += delegate(object s, EventArgs e) { selTheme = key; BuildUILater(); };
             Controls.Add(btn);
         }
         cy += bh + 20;
@@ -1447,6 +1470,7 @@ class SettingsForm : Form {
                                   ContentAlignment.MiddleRight);
         cy += 26;
         var opacityBar = new TrackBar {
+            AutoSize=false,   // 기본값이면 Windows가 높이를 약 45px로 늘려 아래 줄을 가림
             Minimum=40, Maximum=100, Value=selOpacity,
             TickFrequency=10, SmallChange=5, LargeChange=10,
             Location=new Point(PX - 6, cy), Size=new Size(FW - PX * 2 + 12, 36),
@@ -1487,7 +1511,7 @@ class SettingsForm : Form {
         ToggleSwitch lightRef = tsLight;
         tsLight.Toggled += delegate(object s, EventArgs e) {
             selLight = lightRef.On;
-            BuildUI();   // 설정 창도 즉시 모드 반영 (미리보기)
+            BuildUILater();   // 설정 창도 모드 반영 (미리보기)
         };
 
         cy += 8;
