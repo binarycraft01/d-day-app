@@ -1,2 +1,7 @@
-node_modules/
-dist/
+# 개인 데이터 / 런타임 생성 파일
+events.txt
+settings.txt
+position.txt
+
+# 빌드 산출물
+*.exe
