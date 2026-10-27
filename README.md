@@ -25,6 +25,10 @@
    - `events.txt`가 없으면 `events.sample.txt`를 복사해 만들어준다
 3. `DDayWidget.exe` 실행
 
+> "Windows의 PC 보호" 경고가 뜨면 **추가 정보 → 실행**. 개인 제작 프로그램이라 코드 서명이 없어서 나오는 경고다.
+
+압축을 풀면 보이는 **`▶README◀.txt`** 에 같은 안내가 들어 있다 (메모장으로 바로 열림).
+
 ## 사용법
 | 조작 | 기능 |
 |---|---|
@@ -58,6 +62,10 @@
 | `sort` | true / false (날짜순 정렬) |
 | `scale` | 70 ~ 200 (%, 크기) |
 
+## 지우는 방법
+1. 설정(⚙)에서 자동 시작을 끈다 (켜 두었다면 레지스트리 `HKCU\...\Run`에 등록되어 있음)
+2. 위젯을 종료하고 폴더를 삭제
+
 ## 기술 스택
 - C# 5 / Windows Forms (.NET Framework 4.x 내장 `csc.exe`로 빌드)
 - 외부 라이브러리 없음
@@ -65,6 +73,9 @@
 ## 히스토리
 - **2024.11** Electron(Node.js/HTML) 버전으로 처음 제작. Perplexity의 도움을 받음. 해당 버전은 커밋 `3fbb7da`에 보존.
 - **2026** C# WinForms로 전면 재작성. Claude와 함께 개발. 버전별 내용은 [CHANGELOG.md](CHANGELOG.md).
+
+## 라이선스
+[MIT License](LICENSE) — 자유롭게 사용·수정·재배포 가능. 저작권 표기와 라이선스 문구는 유지.
 
 ## 만든 사람
 © 2026 김민수 · Built with Claude
